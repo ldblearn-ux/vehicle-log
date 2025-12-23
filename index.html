@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ລະບົບເກັບກຳຂໍ້ມູນການນຳໃຊ້ລົດ (Cloud)</title>
+    <title>ລະບົບເກັບກຳຂໍ້ມູນການນຳໃຊ້ລົດ (Real-time Cloud)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;700&display=swap');
@@ -25,30 +25,29 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 0.5rem center;
-            background-size: 1.5em;
+        
+        /* Modal Animation */
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+            transition: all 0.3s ease;
         }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-7xl mx-auto">
         <!-- Header -->
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-blue-800 flex items-center gap-2">
-                    Vehicle Log Bookຕິດຕາມນຳໃຊ້ລົດ
-                    <span id="sync-status" class="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-1 rounded">Syncing...</span>
+                    Vehicle Log Real-time
+                    <span id="sync-status" class="text-xs font-normal bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200">Online</span>
                 </h1>
-                <p class="text-gray-500">ລະບົບຕິດຕາມການນຳໃຊ້ລົດ ແລະ ຄິດໄລ່ນ້ຳມັນ (Cloud)</p>
+                <p class="text-gray-500">ລະບົບບັນທຶກຂໍ້ມູນແຍກຕາມສາຂາ ແລະ ໜ່ວຍບໍລິການ</p>
             </div>
             <div class="text-right">
                 <span id="current-date" class="text-sm font-medium text-gray-600 block"></span>
-                <span id="user-id-display" class="text-[10px] text-gray-400">UID: Loading...</span>
+                <span id="user-id-display" class="text-[10px] text-gray-400 italic">Connecting...</span>
             </div>
         </header>
 
@@ -67,7 +66,7 @@
                 <h2 id="total-fuel-events" class="text-3xl font-bold text-gray-800">0</h2>
             </div>
             <div class="card p-6 border-l-4 border-red-500">
-                <p class="text-gray-500 text-sm">ປະລິມານນ້ຳມັນລວມ (L)</p>
+                <p class="text-gray-500 text-sm">ນ້ຳມັນລວມ (L)</p>
                 <h2 id="total-fuel-liters" class="text-3xl font-bold text-gray-800">0</h2>
             </div>
         </div>
@@ -75,15 +74,26 @@
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
             <!-- Form Section -->
             <div class="lg:col-span-1">
-                <div class="card p-6 sticky top-8 border border-blue-50">
-                    <h3 class="text-lg font-bold mb-4 text-gray-700 flex items-center justify-between">
-                        ບັນທຶກຂໍ້ມູນ
-                        <div id="form-loader" class="hidden loading-spinner"></div>
-                    </h3>
+                <div class="card p-6 sticky top-8 border border-blue-100">
+                    <h3 id="formTitle" class="text-lg font-bold mb-4 text-gray-700">ບັນທຶກຂໍ້ມູນໃໝ່</h3>
                     <form id="logForm" class="space-y-4">
+                        <input type="hidden" id="editId">
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">ເລືອກສາຂາ / ໜ່ວຍບໍລິການ</label>
+                            <select id="branch" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border focus:ring-2 focus:ring-blue-500 outline-none font-bold text-blue-700">
+                                <option value="">-- ເລືອກສາຂາ --</option>
+                                <option value="ສາຂານ້ອຍ ສາລະວັນ">ສາຂານ້ອຍ ສາລະວັນ</option>
+                                <option value="ໜ່ວຍບໍລິການ ເລົ່າງາມ">ໜ່ວຍບໍລິການ ເລົ່າງາມ</option>
+                                <option value="ໜ່ວຍບໍລິການ ຄົງເຊໂດນ">ໜ່ວຍບໍລິການ ຄົງເຊໂດນ</option>
+                                <option value="ໜ່ວຍບໍລິການ ລະຄອນເພັງ">ໜ່ວຍບໍລິການ ລະຄອນເພັງ</option>
+                                <option value="ໜ່ວຍບໍລິການ ຕະໂອ້ຍ">ໜ່ວຍບໍລິການ ຕະໂອ້ຍ</option>
+                            </select>
+                        </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700">ເລືອກລົດ</label>
-                            <select id="vehicle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 border">
+                            <select id="vehicle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border focus:ring-2 focus:ring-blue-500 outline-none">
                                 <option value="">-- ເລືອກລົດ --</option>
                                 <option value="ລົດ ລີໂວ້ 3999" data-rate="10" data-fuel="ກາຊວນ">ລົດ ລີໂວ້ 3999</option>
                                 <option value="ລົດປາໂດ້ 3999" data-rate="10" data-fuel="ກາຊວນ">ລົດປາໂດ້ 3999</option>
@@ -96,102 +106,145 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">ຊື່ຜູ້ຂັບ</label>
-                            <input type="text" id="driver" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border">
+                            <input type="text" id="driver" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">ຈຸດປະສົງ</label>
-                            <input type="text" id="purpose" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border">
+                            <input type="text" id="purpose" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">ກິໂລເລີ່ມ</label>
-                                <input type="number" id="kmStart" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border">
+                                <input type="number" id="kmStart" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border outline-none">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">ກິໂລສິ້ນສຸດ</label>
-                                <input type="number" id="kmEnd" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border">
+                                <input type="number" id="kmEnd" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border outline-none">
                             </div>
                         </div>
-                        <div class="flex items-center">
-                            <input type="checkbox" id="refuel" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
-                            <label for="refuel" class="ml-2 block text-sm text-gray-700 font-bold text-orange-600">ມີການເຕີມນ້ຳມັນ</label>
+                        <div class="flex items-center gap-2 bg-orange-50 p-2 rounded-md border border-orange-100">
+                            <input type="checkbox" id="refuel" class="h-4 w-4 text-orange-600 border-gray-300 rounded">
+                            <label for="refuel" class="text-sm font-bold text-orange-700">ມີການເຕີມນ້ຳມັນ</label>
                         </div>
-                        <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
-                            ບັນທຶກລົງ Cloud
-                        </button>
+                        <div class="flex flex-col gap-2 pt-2">
+                            <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-md active:scale-95">
+                                ບັນທຶກລົງ Cloud
+                            </button>
+                            <button type="button" id="cancelBtn" class="hidden w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-300 transition">
+                                ຍົກເລີກ
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
 
             <!-- Table Section -->
             <div class="lg:col-span-3">
-                <div class="card p-6 overflow-hidden min-h-[400px]">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold text-gray-700">ປະຫວັດການນຳໃຊ້</h3>
-                        <div class="flex gap-2">
-                            <button onclick="exportData()" class="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-md hover:bg-green-200">Export CSV</button>
-                        </div>
+                <div class="card p-6 min-h-[500px] flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-gray-700">ປະຫວັດການນຳໃຊ້ (ແຍກຕາມສາຂາ)</h3>
+                        <button onclick="exportData()" class="flex items-center gap-2 text-sm bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 shadow-sm transition font-bold">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            ດາວໂຫຼດ Excel (CSV)
+                        </button>
                     </div>
-                    <div class="overflow-x-auto">
+
+                    <div class="overflow-x-auto flex-grow">
                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-gray-50 text-gray-600">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ວັນທີ</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ຂໍ້ມູນລົດ / ຜູ້ຂັບ</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ໄລຍະທາງ</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ນ້ຳມັນ (ຄາດຄະເນ)</th>
-                                    <th class="px-4 py-3 text-right"></th>
+                                    <th class="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider">ວັນທີ/ສາຂາ</th>
+                                    <th class="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider">ລົດ / ຜູ້ຂັບ</th>
+                                    <th class="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider">ໄລຍະທາງ</th>
+                                    <th class="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider">ນ້ຳມັນ</th>
+                                    <th class="px-4 py-3 text-right">ຈັດການ</th>
                                 </tr>
                             </thead>
                             <tbody id="logList" class="divide-y divide-gray-100">
-                                <!-- Data will be inserted here -->
+                                <!-- Data rows -->
                             </tbody>
                         </table>
-                    </div>
-                    <div id="loadingLogs" class="flex justify-center py-20">
-                        <div class="loading-spinner w-8 h-8"></div>
-                    </div>
-                    <div id="emptyState" class="text-center py-10 text-gray-400 hidden">
-                        ຍັງບໍ່ມີຂໍ້ມູນການບັນທຶກ
+                        
+                        <div id="loadingLogs" class="flex flex-col items-center justify-center py-20 gap-3">
+                            <div class="loading-spinner w-10 h-10 border-4 border-blue-500 border-t-transparent"></div>
+                            <p class="text-gray-400 text-sm italic">ກຳລັງໂຫຼດຂໍ້ມູນຈາກ Cloud...</p>
+                        </div>
+                        <div id="emptyState" class="text-center py-20 text-gray-400 hidden">
+                            ຍັງບໍ່ມີຂໍ້ມູນການບັນທຶກໃນລະບົບ
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Notification -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-xl translate-y-20 transition-transform duration-300 ease-in-out">
-        ບັນທຶກສຳເລັດ!
+    <!-- Custom Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-[200] hidden items-center justify-center p-4 modal-overlay">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">ຢືນຢັນການລຶບ</h3>
+                <p class="text-gray-500">ທ່ານຕ້ອງການລຶບຂໍ້ມູນລາຍການນີ້ແທ້ບໍ່? ຂໍ້ມູນທີ່ລຶບແລ້ວຈະບໍ່ສາມາດກູ້ຄືນໄດ້.</p>
+            </div>
+            <div class="flex border-t border-gray-100">
+                <button id="cancelDeleteBtn" class="flex-1 px-4 py-4 text-gray-500 font-bold hover:bg-gray-50 transition border-r border-gray-100 uppercase text-sm tracking-wide">
+                    ປະຕິເສດ / ຍົກເລີກ
+                </button>
+                <button id="confirmDeleteBtn" class="flex-1 px-4 py-4 text-red-600 font-bold hover:bg-red-50 transition uppercase text-sm tracking-wide">
+                    ຕົກລົງ / ລຶບ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-3 rounded-full shadow-2xl translate-y-32 transition-transform duration-500 ease-out z-[100] flex items-center gap-3">
+        <span id="toast-icon" class="text-green-400">●</span>
+        <span id="toast-msg">ບັນທຶກສຳເລັດ!</span>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vehicle-log-v3-fuel';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vehicle-log-v4-branches';
 
         let user = null;
         let logs = [];
+        let isEditing = false;
+        let deleteTargetId = null;
 
-        const init = async () => {
-            document.getElementById('current-date').innerText = new Date().toLocaleDateString('lo-LA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('lo-LA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        const initAuth = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (error) { console.error(error); }
+            } catch (error) { 
+                showToast("ການເຊື່ອມຕໍ່ຖານຂໍ້ມູນຜິດພາດ", "red");
+            }
         };
 
         onAuthStateChanged(auth, (u) => {
             user = u;
-            if (user) setupRealtimeListener();
+            if (user) {
+                document.getElementById('user-id-display').innerText = `Cloud ID: ${user.uid.substring(0,6)}`;
+                setupRealtimeListener();
+            }
         });
 
         function setupRealtimeListener() {
@@ -203,14 +256,17 @@
                 renderLogs();
                 updateStats();
                 document.getElementById('loadingLogs').classList.add('hidden');
-                document.getElementById('sync-status').innerText = 'Cloud Synced';
-            }, (error) => { console.error(error); });
+                document.getElementById('sync-status').innerText = 'Cloud Connected';
+            }, (error) => {
+                showToast("Snapshot Error", "red");
+            });
         }
 
         document.getElementById('logForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             if (!user) return;
 
+            const editId = document.getElementById('editId').value;
             const vehicleSelect = document.getElementById('vehicle');
             const selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
             const fuelRate = parseFloat(selectedOption.getAttribute('data-rate'));
@@ -220,37 +276,116 @@
             const kmEnd = parseInt(document.getElementById('kmEnd').value);
             const distance = kmEnd - kmStart;
             
-            // Calculate fuel: distance / rate
-            const fuelUsed = distance / fuelRate;
+            if (distance < 0) {
+                showToast("ກິໂລສິ້ນສຸດຕ້ອງຫຼາຍກວ່າເລີ່ມ", "red");
+                return;
+            }
 
+            const fuelUsed = distance / fuelRate;
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
 
+            const payload = {
+                branch: document.getElementById('branch').value,
+                vehicle: vehicleSelect.value,
+                fuelType: fuelType,
+                fuelRate: fuelRate,
+                driver: document.getElementById('driver').value,
+                purpose: document.getElementById('purpose').value,
+                kmStart: kmStart,
+                kmEnd: kmEnd,
+                distance: distance,
+                fuelUsed: fuelUsed,
+                refuel: document.getElementById('refuel').checked,
+                updatedAt: serverTimestamp()
+            };
+
             try {
-                const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'vehicle_logs');
-                await addDoc(collectionRef, {
-                    vehicle: vehicleSelect.value,
-                    fuelType: fuelType,
-                    fuelRate: fuelRate,
-                    driver: document.getElementById('driver').value,
-                    purpose: document.getElementById('purpose').value,
-                    kmStart: kmStart,
-                    kmEnd: kmEnd,
-                    distance: distance,
-                    fuelUsed: fuelUsed,
-                    refuel: document.getElementById('refuel').checked,
-                    createdBy: user.uid,
-                    createdAt: serverTimestamp(),
-                    dateLabel: new Date().toLocaleString('lo-LA')
-                });
-                this.reset();
-                showToast("ບັນທຶກສຳເລັດ!");
+                if (isEditing && editId) {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'vehicle_logs', editId);
+                    await updateDoc(docRef, payload);
+                    showToast("ແກ້ໄຂສຳເລັດ!");
+                    resetForm();
+                } else {
+                    payload.createdBy = user.uid;
+                    payload.createdAt = serverTimestamp();
+                    payload.dateLabel = new Date().toLocaleDateString('lo-LA');
+                    const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'vehicle_logs');
+                    await addDoc(collectionRef, payload);
+                    showToast("ບັນທຶກສຳເລັດ!");
+                    this.reset();
+                }
             } catch (error) {
-                showToast("ຂໍ້ຜິດພາດ");
+                showToast("ບັນທຶກບໍ່ສຳເລັດ", "red");
             } finally {
                 btn.disabled = false;
             }
         });
+
+        // Delete Logic with Custom Modal
+        window.deleteLog = (id) => {
+            deleteTargetId = id;
+            const modal = document.getElementById('deleteModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+            const modal = document.getElementById('deleteModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            deleteTargetId = null;
+        });
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+            if (!deleteTargetId) return;
+            
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'vehicle_logs', deleteTargetId));
+                showToast("ລຶບຂໍ້ມູນສຳເລັດ", "orange");
+                
+                // Reset edit form if we deleted the item being edited
+                if (isEditing && document.getElementById('editId').value === deleteTargetId) {
+                    resetForm();
+                }
+            } catch (e) { 
+                showToast("ລຶບບໍ່ສຳເລັດ", "red"); 
+            } finally {
+                const modal = document.getElementById('deleteModal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                deleteTargetId = null;
+            }
+        });
+
+        window.editLog = (id) => {
+            const log = logs.find(l => l.id === id);
+            if (!log) return;
+            isEditing = true;
+            document.getElementById('editId').value = id;
+            document.getElementById('branch').value = log.branch || '';
+            document.getElementById('vehicle').value = log.vehicle;
+            document.getElementById('driver').value = log.driver;
+            document.getElementById('purpose').value = log.purpose;
+            document.getElementById('kmStart').value = log.kmStart;
+            document.getElementById('kmEnd').value = log.kmEnd;
+            document.getElementById('refuel').checked = log.refuel;
+            document.getElementById('formTitle').innerText = "ແກ້ໄຂຂໍ້ມູນ";
+            document.getElementById('submitBtn').innerText = "ຢືນຢັນການແກ້ໄຂ";
+            document.getElementById('cancelBtn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        function resetForm() {
+            isEditing = false;
+            document.getElementById('logForm').reset();
+            document.getElementById('editId').value = "";
+            document.getElementById('formTitle').innerText = "ບັນທຶກຂໍ້ມູນໃໝ່";
+            document.getElementById('submitBtn').innerText = "ບັນທຶກລົງ Cloud";
+            document.getElementById('cancelBtn').classList.add('hidden');
+        }
+
+        document.getElementById('cancelBtn').addEventListener('click', resetForm);
 
         function renderLogs() {
             const list = document.getElementById('logList');
@@ -261,30 +396,35 @@
                 return;
             }
             emptyState.classList.add('hidden');
-
             list.innerHTML = logs.map(log => `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-4 text-sm text-gray-600">${log.dateLabel ? log.dateLabel.split(',')[0] : '...'}</td>
+                <tr class="hover:bg-gray-50 border-b border-gray-100 group">
                     <td class="px-4 py-4">
-                        <div class="text-sm font-bold text-blue-700">${log.vehicle}</div>
-                        <div class="text-xs font-medium text-gray-900">${log.driver}</div>
-                        <div class="text-[10px] text-gray-400 italic">${log.purpose}</div>
+                        <div class="text-[10px] text-gray-400 font-bold">${log.dateLabel || '-'}</div>
+                        <div class="text-xs font-bold text-orange-600">${log.branch || 'ບໍ່ໄດ້ລະບຸສາຂາ'}</div>
                     </td>
                     <td class="px-4 py-4">
-                        <div class="text-sm text-gray-800 font-semibold">${log.distance} km</div>
+                        <div class="text-sm font-bold text-blue-800">${log.vehicle}</div>
+                        <div class="text-xs text-gray-600">${log.driver}</div>
+                        <div class="text-[9px] text-gray-400 italic">${log.purpose}</div>
+                    </td>
+                    <td class="px-4 py-4">
+                        <div class="text-sm font-bold text-gray-700">${log.distance} km</div>
                         <div class="text-[10px] text-gray-400">${log.kmStart} - ${log.kmEnd}</div>
                     </td>
                     <td class="px-4 py-4">
-                        <div class="text-sm text-red-600 font-bold">${log.fuelUsed ? log.fuelUsed.toFixed(2) : 0} L</div>
-                        <div class="text-[10px] text-gray-500">${log.fuelType} (${log.fuelRate}km/L)</div>
-                        ${log.refuel ? '<span class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded bg-orange-100 text-orange-600 border border-orange-200">ເຕີມນ້ຳມັນ</span>' : ''}
+                        <div class="text-sm font-bold text-red-600">${log.fuelUsed?.toFixed(2) || 0} L</div>
+                        <div class="text-[10px] text-gray-500">${log.fuelType}</div>
+                        ${log.refuel ? '<span class="text-[9px] px-1 bg-red-100 text-red-600 font-bold rounded">REFUEL</span>' : ''}
                     </td>
                     <td class="px-4 py-4 text-right">
-                        <button onclick="window.deleteLog('${log.id}')" class="text-red-400 hover:text-red-600 p-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
+                        <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="window.editLog('${log.id}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="ແກ້ໄຂ">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            </button>
+                            <button onclick="window.deleteLog('${log.id}')" class="p-1.5 text-red-500 hover:bg-red-50 rounded" title="ລຶບ">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `).join('');
@@ -294,42 +434,35 @@
             const totalDistance = logs.reduce((sum, log) => sum + (log.distance || 0), 0);
             const totalLiters = logs.reduce((sum, log) => sum + (log.fuelUsed || 0), 0);
             const totalFuelEvents = logs.filter(log => log.refuel).length;
-
             document.getElementById('total-trips').innerText = logs.length;
             document.getElementById('total-km').innerText = totalDistance.toLocaleString();
             document.getElementById('total-fuel-events').innerText = totalFuelEvents;
             document.getElementById('total-fuel-liters').innerText = totalLiters.toLocaleString(undefined, {maximumFractionDigits: 1});
         }
 
-        window.deleteLog = async (id) => {
-            if (confirm('ລຶບຂໍ້ມູນ?')) {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'vehicle_logs', id));
-                    showToast("ລຶບແລ້ວ");
-                } catch (e) {}
-            }
-        };
-
         window.exportData = () => {
             if (logs.length === 0) return;
-            let csv = "ວັນທີ,ລົດ,ຜູ້ຂັບ,ຈຸດປະສົງ,ກິໂລເລີ່ມ,ກິໂລສິ້ນສຸດ,ໄລຍະທາງ,ປະເພດນ້ຳມັນ,ສິ້ນເປືອງ(ລິດ),ເຕີມນ້ຳມັນ\n";
-            logs.forEach(l => csv += `${l.dateLabel},${l.vehicle},${l.driver},${l.purpose},${l.kmStart},${l.kmEnd},${l.distance},${l.fuelType},${l.fuelUsed.toFixed(2)},${l.refuel?'ແມ່ນ':'ບໍ່'}\n`);
+            let csv = "ວັນທີ,ສາຂາ,ລົດ,ຜູ້ຂັບ,ຈຸດປະສົງ,ກິໂລເລີ່ມ,ກິໂລສິ້ນສຸດ,ໄລຍະທາງ,ປະເພດນ້ຳມັນ,ສິ້ນເປືອງ(ລິດ),ເຕີມນ້ຳມັນ\n";
+            logs.forEach(l => csv += `${l.dateLabel},${l.branch},${l.vehicle},${l.driver},${l.purpose},${l.kmStart},${l.kmEnd},${l.distance},${l.fuelType},${l.fuelUsed.toFixed(2)},${l.refuel?'ແມ່ນ':'ບໍ່'}\n`);
             const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `vehicle_log_fuel_report_${new Date().getTime()}.csv`;
+            a.download = `Vehicle_Report_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
         };
 
-        function showToast(msg) {
+        function showToast(msg, color = "green") {
             const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.classList.remove('translate-y-20');
-            setTimeout(() => t.classList.add('translate-y-20'), 3000);
+            const icon = document.getElementById('toast-icon');
+            const message = document.getElementById('toast-msg');
+            message.innerText = msg;
+            icon.style.color = color === "red" ? "#ef4444" : (color === "orange" ? "#f97316" : "#22c55e");
+            t.classList.remove('translate-y-32');
+            setTimeout(() => t.classList.add('translate-y-32'), 3000);
         }
 
-        init();
+        initAuth();
     </script>
 </body>
 </html>
