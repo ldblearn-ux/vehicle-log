@@ -41,13 +41,13 @@
             <div>
                 <h1 class="text-2xl font-bold text-blue-800 flex items-center gap-2">
                     Vehicle Log Real-time
-                    <span id="sync-status" class="text-xs font-normal bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200">Online</span>
+                    <span id="sync-status" class="text-xs font-normal bg-gray-100 text-gray-500 px-2 py-1 rounded border border-gray-200">Connecting...</span>
                 </h1>
                 <p class="text-gray-500">ລະບົບບັນທຶກຂໍ້ມູນແຍກຕາມສາຂາ ແລະ ໜ່ວຍບໍລິການ</p>
             </div>
             <div class="text-right">
                 <span id="current-date" class="text-sm font-medium text-gray-600 block"></span>
-                <span id="user-id-display" class="text-[10px] text-gray-400 italic">Connecting...</span>
+                <span id="user-id-display" class="text-[10px] text-gray-400 italic">Cloud ID: Checking...</span>
             </div>
         </header>
 
@@ -212,9 +212,25 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = JSON.parse(__firebase_config);
+        // Firebase Config Handling for GitHub Deployment
+        let firebaseConfig;
+        try {
+            firebaseConfig = JSON.parse(__firebase_config);
+        } catch (e) {
+            // FALLBACK: If running on GitHub, you must replace these with your actual Firebase project config
+            firebaseConfig = {
+               apiKey: "AIzaSyD4Dttkiih6yL32hvZCAEITLivzNUfAAds",
+                authDomain: "vehicle-log-4aa45.firebaseapp.com",
+                projectId: "vehicle-log-4aa45",
+                storageBucket: "vehicle-log-4aa45.firebasestorage.app",
+                messagingSenderId: "19984851578",
+                appId: "1:19984851578:web:12b7d9e52f0a1cbd9a11c3",
+                measurementId: "G-T35CR7WZN9"
+            };
+        }
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -235,7 +251,8 @@
                     await signInAnonymously(auth);
                 }
             } catch (error) { 
-                showToast("ການເຊື່ອມຕໍ່ຖານຂໍ້ມູນຜິດພາດ", "red");
+                console.error("Auth Error:", error);
+                showToast("ການເຊື່ອມຕໍ່ຖານຂໍ້ມູນຜິດພາດ. ກວດເບິ່ງ Authorized Domains ໃນ Firebase Console.", "red");
             }
         };
 
@@ -244,27 +261,39 @@
             if (user) {
                 document.getElementById('user-id-display').innerText = `Cloud ID: ${user.uid.substring(0,6)}`;
                 setupRealtimeListener();
+            } else {
+                initAuth();
             }
         });
 
         function setupRealtimeListener() {
             if (!user) return;
             const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'vehicle_logs');
+            
+            // Using simple query for stability (Rule 2)
             onSnapshot(collectionRef, (snapshot) => {
                 logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Sort in memory to avoid needing index (Rule 2)
                 logs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                
                 renderLogs();
                 updateStats();
                 document.getElementById('loadingLogs').classList.add('hidden');
-                document.getElementById('sync-status').innerText = 'Cloud Connected';
+                const status = document.getElementById('sync-status');
+                status.innerText = 'Online / Cloud Connected';
+                status.className = "text-xs font-normal bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200";
             }, (error) => {
-                showToast("Snapshot Error", "red");
+                console.error("Snapshot Error:", error);
+                showToast("Snapshot Error: " + error.message, "red");
             });
         }
 
         document.getElementById('logForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            if (!user) return;
+            if (!user) {
+                showToast("ກະລຸນາລໍຖ້າການເຊື່ອມຕໍ່ Cloud...", "orange");
+                return;
+            }
 
             const editId = document.getElementById('editId').value;
             const vehicleSelect = document.getElementById('vehicle');
@@ -316,7 +345,8 @@
                     this.reset();
                 }
             } catch (error) {
-                showToast("ບັນທຶກບໍ່ສຳເລັດ", "red");
+                console.error("Write Error:", error);
+                showToast("ບໍ່ສາມາດບັນທຶກໄດ້: " + error.message, "red");
             } finally {
                 btn.disabled = false;
             }
@@ -338,18 +368,17 @@
         });
 
         document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-            if (!deleteTargetId) return;
+            if (!deleteTargetId || !user) return;
             
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'vehicle_logs', deleteTargetId));
                 showToast("ລຶບຂໍ້ມູນສຳເລັດ", "orange");
                 
-                // Reset edit form if we deleted the item being edited
                 if (isEditing && document.getElementById('editId').value === deleteTargetId) {
                     resetForm();
                 }
             } catch (e) { 
-                showToast("ລຶບບໍ່ສຳເລັດ", "red"); 
+                showToast("ລຶບບໍ່ສຳເລັດ: " + e.message, "red"); 
             } finally {
                 const modal = document.getElementById('deleteModal');
                 modal.classList.add('hidden');
@@ -459,9 +488,10 @@
             message.innerText = msg;
             icon.style.color = color === "red" ? "#ef4444" : (color === "orange" ? "#f97316" : "#22c55e");
             t.classList.remove('translate-y-32');
-            setTimeout(() => t.classList.add('translate-y-32'), 3000);
+            setTimeout(() => t.classList.add('translate-y-32'), 4000);
         }
 
+        // Initialize auth flow
         initAuth();
     </script>
 </body>
